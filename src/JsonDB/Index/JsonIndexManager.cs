@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace DotNetGameFramework.JsonDB;
+namespace JsonDB;
 
 /// <summary>
 /// 内存索引管理器

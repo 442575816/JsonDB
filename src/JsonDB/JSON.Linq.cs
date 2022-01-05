@@ -1,12 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Nodes;
-
-namespace DotNetGameFramework.JsonDB;
+namespace JsonDB;
 
 public static partial class JSON
 {
@@ -374,7 +369,7 @@ public static partial class JSON
         {
             if (node.NodeType == NodeType.Object)
             {
-                var v = node.Get<JsonObject>(key);
+                var v = node.Get<JsonNode>(key);
                 if (v != null)
                 {
                     return v.Count;

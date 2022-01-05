@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace DotNetGameFramework.JsonDB;
+namespace JsonDB;
 
 /// <summary>
 /// B+Tree内存索引

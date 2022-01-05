@@ -3,7 +3,7 @@ using System.Text;
 
 // ReSharper disable All
 
-namespace DotNetGameFramework.JsonDB;
+namespace JsonDB;
 
 /// <summary>
 /// B+ Tree的实现

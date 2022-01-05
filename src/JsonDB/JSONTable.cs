@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 
-namespace DotNetGameFramework.JsonDB;
+namespace JsonDB;
 
 public class JSONTable : IEnumerable<JsonNode>
 {
