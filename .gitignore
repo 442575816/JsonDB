@@ -1,3 +1,7 @@
+# common
+.DS_Store
+.idea
+
+# c#
 bin
 obj
-.DS_Store

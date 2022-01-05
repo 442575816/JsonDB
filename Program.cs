@@ -1286,10 +1286,10 @@ String json = "{\"techs\":[1,2,3,4,5]}";
 
            
             var table = JSONTable.Create("songs");
-            // // table.AddIndex("sex", false, "sex");
-            // // table.AddIndex("age", false, "age");
-            // // table.Insert("{\"title\":\"low1\",\"name\":\"will\",\"employees\":[{\"firstName\":\"Bill\",\"lastName\":\"Gates\"},{\"firstName\":\"George\",\"lastName\":\"Bush\"}]}");
-            // // table.Insert("{\"title\":\"low1\",\"name\":\"will1\",\"age\":\"1\"}");
+            table.AddIndex("sex", false, "sex");
+            table.AddIndex("age", false, "age");
+            table.Insert("{\"title\":\"low1\",\"name\":\"will\",\"employees\":[{\"firstName\":\"Bill\",\"lastName\":\"Gates\"},{\"firstName\":\"George\",\"lastName\":\"Bush\"}]}");
+            table.Insert("{\"title\":\"low1\",\"name\":\"will1\",\"age\":\"1\"}");
             
             // var max = 10000;
             // var random = new Random();
@@ -1320,18 +1320,18 @@ String json = "{\"techs\":[1,2,3,4,5]}";
             // table.Serialize("song.json");
             // time.Stop();
             
-            time.Restart();
-            table.Load("song.json");
-            time.Stop();
+            // time.Restart();
+            // table.Load("song.json");
+            // time.Stop();
             // var fs = new FileStream("song.json", FileMode.Create);
             // fs.Write(Encoding.UTF8.GetBytes(a));
             // fs.Close();
             Console.WriteLine($"time:{time.ElapsedMilliseconds}, Count:{table.Table().Count}");
             time.Restart();
             List<JsonNode> a = null;
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < 1000; i++)
             {
-                a = (List<JsonNode>)table.Where(JSON.Eq("age", 1)).ToList();
+                a = (List<JsonNode>)table.Where(JSON.Eq("age", "1")).ToList();
             }
             time.Stop();
             Console.WriteLine($"time:{time.ElapsedMilliseconds}, count:{a[0]}");
