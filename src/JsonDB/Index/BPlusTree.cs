@@ -8,7 +8,7 @@ namespace JsonDB;
 /// <summary>
 /// B+ Tree的实现
 /// </summary>
-public class BPlusTreeDictionary<K, V> where K : IComparable<K>
+public class BPlusTree<K, V> where K : IComparable<K>
 {
     /// <summary>
     /// 默认每个节点存储的数据数量
@@ -22,7 +22,7 @@ public class BPlusTreeDictionary<K, V> where K : IComparable<K>
     /// <summary>
     /// 构造函数
     /// </summary>
-    public BPlusTreeDictionary() : this(DEFAULT_M)
+    public BPlusTree() : this(DEFAULT_M)
     {
     }
 
@@ -30,7 +30,7 @@ public class BPlusTreeDictionary<K, V> where K : IComparable<K>
     /// 构造函数
     /// </summary>
     /// <param name="m">每个节点存储的数据数量</param>
-    public BPlusTreeDictionary(int m)
+    public BPlusTree(int m)
     {
         M = (m % 2 == 0) ? m : m - 1;
         root = new LeafNode<K, V>(this);
@@ -105,11 +105,11 @@ public class BPlusTreeDictionary<K, V> where K : IComparable<K>
         Random random = new Random();
         for (int j = 0; j < 10000; j++)
         {
-            BPlusTreeDictionary<int, string> myTreeDictionary = new BPlusTreeDictionary<int, string>(4);
+            BPlusTree<int, string> myTree = new BPlusTree<int, string>(4);
             int max = 1000;
             for (int i = 1; i <= max; i++)
             {
-                myTreeDictionary.Insert(i, i.ToString());
+                myTree.Insert(i, i.ToString());
             }
 
             HashSet<int> set = new HashSet<int>();
@@ -117,12 +117,12 @@ public class BPlusTreeDictionary<K, V> where K : IComparable<K>
             {
                 int tmp = random.Next(max) + 1;
                 set.Add(tmp);
-                myTreeDictionary.Remove(tmp);
+                myTree.Remove(tmp);
             }
 
             for (int i = 1; i <= max; i++)
             {
-                myTreeDictionary.Insert(i, i.ToString());
+                myTree.Insert(i, i.ToString());
                 set.Remove(i);
             }
 
@@ -130,12 +130,12 @@ public class BPlusTreeDictionary<K, V> where K : IComparable<K>
             {
                 int tmp = random.Next(max) + 1;
                 set.Add(tmp);
-                myTreeDictionary.Remove(tmp);
+                myTree.Remove(tmp);
             }
 
             for (int i = 1; i <= max; i++)
             {
-                myTreeDictionary.Insert(i, i.ToString());
+                myTree.Insert(i, i.ToString());
                 set.Remove(i);
             }
 
@@ -143,14 +143,14 @@ public class BPlusTreeDictionary<K, V> where K : IComparable<K>
             {
                 int tmp = random.Next(max) + 1;
                 set.Add(tmp);
-                myTreeDictionary.Remove(tmp);
+                myTree.Remove(tmp);
             }
 
             for (int k = 1; k <= max; k++)
             {
                 if (!set.Contains(k))
                 {
-                    string value = myTreeDictionary.Find(k);
+                    string value = myTree.Find(k);
                     if (null == value || value != k.ToString())
                     {
                         Console.WriteLine("ERROR");
@@ -158,7 +158,7 @@ public class BPlusTreeDictionary<K, V> where K : IComparable<K>
                 }
                 else
                 {
-                    string value = myTreeDictionary.Find(k);
+                    string value = myTree.Find(k);
                     if (null != value)
                     {
                         Console.WriteLine("ERROR");
@@ -183,17 +183,17 @@ abstract class Node<K, V> where K : IComparable<K>
     public Node<K, V> Parent { get; set; } // 父节点
     protected K[] keys; // 节点包含的key值
     protected int size; // 节点数据数量
-    protected readonly BPlusTreeDictionary<K, V> treeDictionary; // 所属的b+tree
+    protected readonly BPlusTree<K, V> Tree; // 所属的b+tree
     protected readonly int M; // 每个节点最大容量
 
     /// <summary>
     /// 构造函数
     /// </summary>
-    /// <param name="treeDictionary"></param>
-    protected Node(BPlusTreeDictionary<K, V> treeDictionary)
+    /// <param name="tree"></param>
+    protected Node(BPlusTree<K, V> tree)
     {
-        this.treeDictionary = treeDictionary;
-        this.M = treeDictionary.M;
+        this.Tree = tree;
+        this.M = tree.M;
     }
 
     /// <summary>
@@ -372,8 +372,8 @@ internal class InternalNode<K, V> : Node<K, V> where K : IComparable<K>
     /// <summary>
     /// 构造函数
     /// </summary>
-    /// <param name="treeDictionary"></param>
-    public InternalNode(BPlusTreeDictionary<K, V> treeDictionary) : base(treeDictionary)
+    /// <param name="tree"></param>
+    public InternalNode(BPlusTree<K, V> tree) : base(tree)
     {
         size = 0;
         pointers = new Node<K,V>[M];
@@ -598,7 +598,7 @@ internal class InternalNode<K, V> : Node<K, V> where K : IComparable<K>
 
             // 分裂为一半
             var m = size / 2;
-            var rightNode = new InternalNode<K, V>(treeDictionary) {size = size - m};
+            var rightNode = new InternalNode<K, V>(Tree) {size = size - m};
 
             Array.Copy(keys, m, rightNode.keys, 0, size - m);
             Array.Copy(pointers, m, rightNode.pointers, 0, size - m);
@@ -617,7 +617,7 @@ internal class InternalNode<K, V> : Node<K, V> where K : IComparable<K>
             size = m;
 
             // 建立新的父节点
-            Parent ??= new InternalNode<K, V>(treeDictionary);
+            Parent ??= new InternalNode<K, V>(Tree);
             rightNode.Parent = Parent;
 
             if (i >= m)
@@ -676,7 +676,7 @@ internal class InternalNode<K, V> : Node<K, V> where K : IComparable<K>
             if (null == Parent && size < 2)
             {
                 // 头节点和子节点合并
-                treeDictionary.root = pointers[0];
+                Tree.root = pointers[0];
                 pointers[0].Parent = null;
             }
             else if (null != Parent)
@@ -760,8 +760,8 @@ internal class LeafNode<K, V> : Node<K, V> where K : IComparable<K>
     /// <summary>
     /// 构造函数
     /// </summary>
-    /// <param name="treeDictionary"></param>
-    public LeafNode(BPlusTreeDictionary<K, V> treeDictionary) : base(treeDictionary)
+    /// <param name="tree"></param>
+    public LeafNode(BPlusTree<K, V> tree) : base(tree)
     {
         size = 0;
         keys = new K[M];
@@ -835,7 +835,7 @@ internal class LeafNode<K, V> : Node<K, V> where K : IComparable<K>
             var m = size / 2;
 
             // 分裂出一个右节点
-            var rightNode = new LeafNode<K, V>(treeDictionary) {size = size - m};
+            var rightNode = new LeafNode<K, V>(Tree) {size = size - m};
 
             // 对右节点赋值，并清理自己
             Array.Copy(keys, m, rightNode.keys, 0, rightNode.size);
@@ -855,7 +855,7 @@ internal class LeafNode<K, V> : Node<K, V> where K : IComparable<K>
             }
             if (prev == null)
             {
-                treeDictionary.head = this;
+                Tree.head = this;
             }
             rightNode.prev = this;
             this.next = rightNode;
@@ -871,7 +871,7 @@ internal class LeafNode<K, V> : Node<K, V> where K : IComparable<K>
             }
 
             // 设置父节点
-            Parent ??= new InternalNode<K, V>(treeDictionary);
+            Parent ??= new InternalNode<K, V>(Tree);
             rightNode.Parent = Parent;
 
             // 父节点插入
@@ -1037,7 +1037,7 @@ internal class LeafNode<K, V> : Node<K, V> where K : IComparable<K>
                     }
                     else if (Parent != null)
                     {
-                        treeDictionary.Print();
+                        Tree.Print();
                         throw new Exception("unknow error");
                     }
                 }

@@ -16,7 +16,7 @@ public class MultiBTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonN
 
     private readonly JSONTable _table;
     private readonly string[] _props;
-    private BPlusTreeDictionary<string, List<string>> _indexTree;
+    private BPlusTree<string, List<string>> _indexTree;
     private readonly Func<string, string, int> _leftComparer;
 
     public MultiBTreeJsonIndexManager(JSONTable table, string name, params string[] keyProps)
@@ -24,7 +24,7 @@ public class MultiBTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonN
         this._table = table;
         this.Name = name;
         this._props = keyProps;
-        this._indexTree = new BPlusTreeDictionary<string, List<string>>();
+        this._indexTree = new BPlusTree<string, List<string>>();
         this._leftComparer = (key, seachKey) => key.StartsWith(seachKey) ? 0 : string.Compare(key, seachKey, StringComparison.Ordinal);
     }
 
@@ -108,7 +108,7 @@ public class MultiBTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonN
 
     public void Clear()
     {
-        this._indexTree = new BPlusTreeDictionary<string, List<string>>();
+        this._indexTree = new BPlusTree<string, List<string>>();
     }
 
     private string GetKey(V value)

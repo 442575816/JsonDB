@@ -10,7 +10,7 @@ namespace JsonDB;
 public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
 {
     private readonly JSONTable _table;
-    private BPlusTreeDictionary<string, string> _indexTree;
+    private BPlusTree<string, string> _indexTree;
     private readonly Func<string, string, int> _leftComparer;
     private readonly string[] _props;
 
@@ -19,7 +19,7 @@ public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
         this._table = table;
         this.Name = name;
         this._props = keyProps;
-        this._indexTree = new BPlusTreeDictionary<string, string>();
+        this._indexTree = new BPlusTree<string, string>();
         this._leftComparer = (key, seachKey) => key.StartsWith(seachKey) ? 0 : string.Compare(key, seachKey, StringComparison.Ordinal);
     }
 
@@ -78,7 +78,7 @@ public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
 
     public void Clear()
     {
-        this._indexTree = new BPlusTreeDictionary<string, string>();
+        this._indexTree = new BPlusTree<string, string>();
     }
 
     private string GetKey(V value)
