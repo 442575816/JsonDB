@@ -31,7 +31,8 @@ public enum ValueType
     Long,
     Double,
     Bool,
-    ArrayObject
+    ArrayObject,
+    ArrayValue
 }
 
 /// <summary>
@@ -111,7 +112,7 @@ public class DynamicJsonNode : DynamicObject
     }
 }
 
-public abstract class JsonNode : IEnumerable<JsonNode>, IComparable<JsonNode>
+public abstract class JsonNode : IEnumerable<JsonNode>, IComparable<JsonNode>, ICloneable
 {
     public string Key { get; set; }
     public NodeType NodeType { get; set; }
@@ -434,7 +435,7 @@ public abstract class JsonNode : IEnumerable<JsonNode>, IComparable<JsonNode>
         return string.CompareOrdinal(this.Key, other?.Key);
     }
 
-    public abstract void Serialize(Stream stream, StringBuilder builder, int depth);
+    public abstract void Serialize(Stream stream, StringBuilder builder, JsonSerializeOptions options, int depth);
 
     public override string ToString()
     {
@@ -444,6 +445,8 @@ public abstract class JsonNode : IEnumerable<JsonNode>, IComparable<JsonNode>
         builder.Append('}');
         return builder.ToString();
     }
+
+    public abstract object Clone();
 
     /// <summary>
     /// 获取指定节点的值
@@ -760,14 +763,29 @@ public class JsonValueNode<T> : JsonNode
         return true;
     }
 
-    public override void Serialize(Stream stream, StringBuilder builder, int depth)
+    public override object Clone()
+    {
+        var node = new JsonValueNode<T>{Key=Key, NodeType = NodeType, Value = Value};
+        if (ChildNodes is not null)
+        {
+            node.ChildNodes = new List<JsonNode>(ChildNodes.Count);
+            foreach (var childNode in ChildNodes)
+            {
+                node.AddChild(childNode.Clone() as JsonNode);
+            }
+        }
+
+        return node;
+    }
+
+    public override void Serialize(Stream stream, StringBuilder builder, JsonSerializeOptions options, int depth)
     {
         // depth, nodetype, key, value
         builder.Clear();
-        builder.Append(depth).Append(JSON.JsonSerializeOptions.Value.COMMA);
-        builder.Append((int)NodeType).Append(JSON.JsonSerializeOptions.Value.COMMA);
-        builder.Append(Key ?? JSON.JsonSerializeOptions.Value.NullValue).Append(JSON.JsonSerializeOptions.Value.COMMA);
-        JSON.GetSerializeValue(Value, builder);
+        builder.Append(depth).Append(options.COMMA);
+        builder.Append((int)NodeType).Append(options.COMMA);
+        builder.Append(Key ?? options.NullValue).Append(options.COMMA);
+        JSON.SerializeValue(Value, builder, options);
         builder.Append('\n');
         stream.Write(Encoding.UTF8.GetBytes(builder.ToString()));
 
@@ -777,7 +795,7 @@ public class JsonValueNode<T> : JsonNode
             {
                 foreach (var node in ChildNodes)
                 {
-                    node.Serialize(stream, builder, depth + 1);
+                    node.Serialize(stream, builder, options, depth + 1);
                 }
             }
         }
@@ -983,26 +1001,51 @@ public class JsonArrayNode<T> : JsonValueNode<List<T>>
             }
         }
     }
+    
+    public override object Clone()
+    {
+        var node = new JsonArrayNode<T>{Key=Key, NodeType = NodeType};
+        if (Value is not null)
+        {
+            node.Value = new List<T>(Value.Count);
+            foreach (var child in Value)
+            {
+                if (child is JsonNode childNode)
+                {
+                    node.Value.Add((T)childNode.Clone());
+                }
+                else
+                {
+                    node.Value.Add(child);
+                }
+            }
+        }
 
-    public override void Serialize(Stream stream, StringBuilder builder, int depth)
+        return node;
+    }
+
+    public override void Serialize(Stream stream, StringBuilder builder, JsonSerializeOptions options, int depth)
     {
         // depth, nodetype, key, value
         builder.Clear();
-        builder.Append(depth).Append(JSON.JsonSerializeOptions.Value.COMMA);
-        builder.Append((int)NodeType).Append(JSON.JsonSerializeOptions.Value.COMMA);
-        builder.Append(Key ?? JSON.JsonSerializeOptions.Value.NullValue).Append(JSON.JsonSerializeOptions.Value.COMMA);
+        builder.Append(depth).Append(options.COMMA);
+        builder.Append((int)NodeType).Append(options.COMMA);
+        builder.Append(Key ?? options.NullValue).Append(options.COMMA);
 
         if (NodeType is NodeType.ArrayValue)
         {
+            builder.Append((char)ValueType.ArrayValue).Append(options.COMMA);
             if (Value is { Count: > 0 })
             {
                 for (var i = 0; i < Value.Count; i++)
                 {
-                    if (i > 0)
+                    if (i == 0)
                     {
-                        builder.Append(JSON.JsonSerializeOptions.Value.COMMA);
+                        JSON.SerializeValue(Value[i], builder, options);
+                        continue;
                     }
-                    JSON.GetSerializeValue(Value, builder);
+                    builder.Append(options.COMMA);
+                    JSON.SerializeValueWithoutType(Value[i], builder, options);
                 }
             }
             builder.Append('\n');
@@ -1010,7 +1053,7 @@ public class JsonArrayNode<T> : JsonValueNode<List<T>>
         }
         else
         {
-            builder.Append((char)ValueType.ArrayObject).Append(JSON.JsonSerializeOptions.Value.COMMA);
+            builder.Append((char)ValueType.ArrayObject).Append(options.COMMA);
             builder.Append('\n');
             stream.Write(Encoding.UTF8.GetBytes(builder.ToString()));
             if (Value is { Count: > 0 })
@@ -1018,7 +1061,7 @@ public class JsonArrayNode<T> : JsonValueNode<List<T>>
                 foreach (var v in Value)
                 {
                     var node = v as JsonNode;
-                    node?.Serialize(stream, builder, depth + 1);
+                    node?.Serialize(stream, builder, options, depth + 1);
                 }
             }
         }
@@ -1030,10 +1073,10 @@ public class JsonArrayNode<T> : JsonValueNode<List<T>>
         {
             builder.Append('"').Append(Key).Append('"').Append(':');
         }
-
-        builder.Append('[');
+        
         if (NodeType == NodeType.ArrayValue)
         {
+            builder.Append('[');
             if (Value is { Count: > 0 })
             {
                 for (var i = 0; i < Value.Count; i++)
@@ -1043,12 +1086,14 @@ public class JsonArrayNode<T> : JsonValueNode<List<T>>
                         builder.Append(',');
                     }
 
-                    builder.Append(Value[i]);
+                    JSON.GetValue(Value[i], builder);
                 }
             }
+            builder.Append(']');
         }
         else if (NodeType == NodeType.ArrayObject)
         {
+            builder.Append('[');
             if (Value is { Count: > 0 })
             {
                 for(var i = 0; i < Value.Count; i++)
@@ -1063,9 +1108,10 @@ public class JsonArrayNode<T> : JsonValueNode<List<T>>
                     builder.Append('}');
                 }
             }
+            builder.Append(']');
         }
 
-        builder.Append(']');
+       
     }
 
     internal override bool TryGetNode(Span<string> keys, int index, out JsonNode node, out int pos)
@@ -1410,41 +1456,73 @@ public static partial class JSON
         }
     }
 
-    internal static void GetSerializeValue<T>(T value, StringBuilder builder)
+    internal static void SerializeValue<T>(T value, StringBuilder builder, JsonSerializeOptions options)
     {
         if (value == null)
         {
-            builder.Append((char)ValueType.Object).Append(JsonSerializeOptions.Value.COMMA);
-            builder.Append(JsonSerializeOptions.Value.NullValue);
+            builder.Append((char)ValueType.Object).Append(options.COMMA);
+            builder.Append(options.NullValue);
         }
         else if (value is string sv)
         {
-            builder.Append((char)ValueType.String).Append(JsonSerializeOptions.Value.COMMA);
+            builder.Append((char)ValueType.String).Append(options.COMMA);
             builder.Append(sv);
         }
         else if (value is int iv)
         {
-            builder.Append((char)ValueType.Int).Append(JsonSerializeOptions.Value.COMMA);
+            builder.Append((char)ValueType.Int).Append(options.COMMA);
             builder.Append(iv);
         }
         else if (value is long lv)
         {
-            builder.Append((char)ValueType.Long).Append(JsonSerializeOptions.Value.COMMA);
+            builder.Append((char)ValueType.Long).Append(options.COMMA);
             builder.Append(lv);
         }
         else if (value is double dv)
         {
-            builder.Append((char)ValueType.Double).Append(JsonSerializeOptions.Value.COMMA);
+            builder.Append((char)ValueType.Double).Append(options.COMMA);
             builder.Append(dv);
         }
         else if (value is bool bv)
         {
-            builder.Append((char)ValueType.Bool).Append(JsonSerializeOptions.Value.COMMA);
+            builder.Append((char)ValueType.Bool).Append(options.COMMA);
             builder.Append(bv);
         }
         else
         {
-            builder.Append((char)ValueType.Object).Append(JsonSerializeOptions.Value.COMMA);
+            builder.Append((char)ValueType.Object).Append(options.COMMA);
+            builder.Append(value);
+        }
+    }
+    
+    internal static void SerializeValueWithoutType<T>(T value, StringBuilder builder, JsonSerializeOptions options)
+    {
+        if (value == null)
+        {
+            builder.Append(options.NullValue);
+        }
+        else if (value is string sv)
+        {
+            builder.Append(sv);
+        }
+        else if (value is int iv)
+        {
+            builder.Append(iv);
+        }
+        else if (value is long lv)
+        {
+            builder.Append(lv);
+        }
+        else if (value is double dv)
+        {
+            builder.Append(dv);
+        }
+        else if (value is bool bv)
+        {
+            builder.Append(bv);
+        }
+        else
+        {
             builder.Append(value);
         }
     }

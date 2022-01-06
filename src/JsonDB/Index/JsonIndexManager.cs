@@ -46,6 +46,23 @@ public interface JsonIndexManager<V>
     /// <param name="args"></param>
     /// <returns></returns>
     List<V> LeftFind(params object[] args);
+    
+    /// <summary>
+    /// 范围查找
+    /// </summary>
+    /// <param name="startValue"></param>
+    /// <param name="endValue"></param>
+    /// <returns></returns>
+    List<V> RangeFind(object startValue, object endValue);
+
+    /// <summary>
+    /// 范围查找
+    /// </summary>
+    /// <param name="startValue"></param>
+    /// <param name="endValue"></param>
+    /// <param name="comparer"></param>
+    /// <returns></returns>
+    List<V> RangeFind(object startValue, object endValue, Func<string, string, int> comparer);
 
     /// <summary>
     /// 索引清理
@@ -76,7 +93,8 @@ public interface JsonIndexManager<V>
             {
                 builder.Append(',');
             }
-            builder.Append(args[i]);
+            var v = args[i];
+            builder.Append(v);
         }
 
         return builder.ToString();

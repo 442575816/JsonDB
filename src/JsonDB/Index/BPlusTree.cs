@@ -63,11 +63,79 @@ public class BPlusTree<K, V> where K : IComparable<K>
         return root.Find(key, comparer);
     }
 
-    public List<V> FindAll(K key, IComparer<K> comparer) => FindAll(key, comparer.Compare);
+    public List<V> LeftFind(K key, IComparer<K> comparer) => LeftFind(key, comparer.Compare);
 
-    public List<V> FindAll(K key, Func<K, K, int> comparer)
+    public List<V> LeftFind(K key, Func<K, K, int> comparer)
     {
-        return root.FindAll(key, comparer);
+        return root.LeftFind(key, comparer);
+    }
+
+    public List<V> RangeFind(K start, K end) => RangeFind(start, end, (key1, key2) => key1.CompareTo(key2));
+    
+    public List<V> RangeFind(K start, K end, IComparer<K> comparer) => RangeFind(start, end, comparer.Compare);
+    
+    public List<V> RangeFind(K start, K end, Func<K, K, int> comparer)
+    {
+        var cvalue = comparer(start, end);
+        if (cvalue > 0)
+        {
+            throw new Exception("start can't greater than end");
+        }
+
+        var startNode = root.GTEFind(start, comparer) as LeafNode<K, V>;
+        var endNode = root.LTEFind(end, comparer) as LeafNode<K, V>;
+
+        if (null == start)
+        {
+            return new List<V>();
+        }
+
+        var resultList = new List<V>();
+        var node = startNode;
+        while (node != null && node != endNode)
+        {
+            var match = false;
+            for (var i = 0; i < node.size; i++)
+            {
+                if (!match && comparer(node.keys[i], start) >= 0)
+                {
+                    match = true;
+                }
+
+                if (match)
+                {
+                    resultList.Add(node.values[i]);
+                }
+            }
+
+            node = node.next;
+        }
+
+        if (endNode != null)
+        {
+            var match = false;
+            for (var i = 0; i < endNode.size; i++)
+            {
+                if (!match && comparer(endNode.keys[i], start) >= 0)
+                {
+                    match = true;
+                }
+
+                if (!match)
+                {
+                    continue;
+                }
+                
+                if (comparer(endNode.keys[i], end) > 0)
+                {
+                    break;
+                }
+
+                resultList.Add(endNode.values[i]);
+            }
+        }
+
+        return resultList;
     }
 
     public V Remove(K key) => Remove(key, (key1, key2) => key1.CompareTo(key2));
@@ -166,7 +234,7 @@ public class BPlusTree<K, V> where K : IComparable<K>
                 }
             }
 
-            Console.WriteLine("succ run " + j + " times");
+            // Console.WriteLine("succ run " + j + " times");
         }
         stopWatch.Stop();
         Console.WriteLine($"btree time:{stopWatch.ElapsedMilliseconds}");
@@ -181,8 +249,8 @@ public class BPlusTree<K, V> where K : IComparable<K>
 abstract class Node<K, V> where K : IComparable<K>
 {
     public Node<K, V> Parent { get; set; } // 父节点
-    protected K[] keys; // 节点包含的key值
-    protected int size; // 节点数据数量
+    public K[] keys; // 节点包含的key值
+    public int size; // 节点数据数量
     protected readonly BPlusTree<K, V> Tree; // 所属的b+tree
     protected readonly int M; // 每个节点最大容量
 
@@ -269,7 +337,7 @@ abstract class Node<K, V> where K : IComparable<K>
     /// <param name="key"></param>
     /// <param name="comparer"></param>
     /// <returns></returns>
-    public List<V> FindAll(K key, IComparer<K> comparer) => FindAll(key, comparer.Compare);
+    public List<V> LeftFind(K key, IComparer<K> comparer) => LeftFind(key, comparer.Compare);
 
     /// <summary>
     /// 根据查找器查询数据
@@ -277,21 +345,50 @@ abstract class Node<K, V> where K : IComparable<K>
     /// <param name="key"></param>
     /// <param name="comparer"></param>
     /// <returns></returns>
-    public abstract List<V> FindAll(K key, Func<K, K, int> comparer);
+    public abstract List<V> LeftFind(K key, Func<K, K, int> comparer);
 
     /// <summary>
     /// >= 查询数据
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public abstract Node<K, V> GTEFind(K key);
+    public Node<K, V> GTEFind(K key) => GTEFind(key, (key1, key2) => key1.CompareTo(key2));
 
     /// <summary>
-    /// 左值查询
+    /// >= 查询数据
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public abstract Node<K, V> LTEFind(K key);
+    public Node<K, V> GTEFind(K key, IComparer<K> comparer) => GTEFind(key, comparer.Compare);
+    
+    /// <summary>
+    /// >= 查询数据
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
+    public abstract Node<K, V> GTEFind(K key, Func<K, K, int> comparer);
+
+    /// <summary>
+    /// <= 查询
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
+    public Node<K, V> LTEFind(K key) => LTEFind(key, (key1, key2) => key1.CompareTo(key2));
+
+    /// <summary>
+    /// <= 查询
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
+    public Node<K, V> LTEFind(K key, IComparer<K> comparer) => LTEFind(key, comparer.Compare);
+    
+    
+    /// <summary>
+    /// <= 查询
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
+    public abstract Node<K, V> LTEFind(K key, Func<K, K, int> comparer);
 
     /// <summary>
     /// 打印节点
@@ -393,7 +490,7 @@ internal class InternalNode<K, V> : Node<K, V> where K : IComparable<K>
         return pointers[i - 1].Find(key, comparer);
     }
 
-    public override List<V> FindAll(K key, Func<K, K, int> comparer)
+    public override List<V> LeftFind(K key, Func<K, K, int> comparer)
     {
         var resultList = new List<V>();
         var i = 1;
@@ -402,27 +499,14 @@ internal class InternalNode<K, V> : Node<K, V> where K : IComparable<K>
             var cvalue = comparer(keys[i], key);
             if (cvalue == 0)
             {
-                resultList.AddRange(pointers[i - 1].FindAll(key, comparer));
+                resultList.AddRange(pointers[i - 1].LeftFind(key, comparer));
             } else if (cvalue > 0)
             {
                 break;
             }
         }
-        resultList.AddRange(pointers[i - 1].FindAll(key, comparer));
+        resultList.AddRange(pointers[i - 1].LeftFind(key, comparer));
         return resultList;
-    }
-
-    public override Node<K, V> GTEFind(K key)
-    {
-        var i = 1;
-        for (; i < size; i++)
-        {
-            if (key.CompareTo(keys[i]) < 0)
-            {
-                break;
-            }
-        }
-        return pointers[i - 1].GTEFind(key);
     }
 
     public override Node<K, V> Insert(K key, V value, Func<K, K, int> comparer)
@@ -437,18 +521,31 @@ internal class InternalNode<K, V> : Node<K, V> where K : IComparable<K>
         }
         return pointers[i - 1].Insert(key, value, comparer);
     }
-
-    public override Node<K, V> LTEFind(K key)
+    
+    public override Node<K, V> GTEFind(K key, Func<K, K, int> comparer)
     {
         var i = 1;
         for (; i < size; i++)
         {
-            if (key.CompareTo(keys[i]) < 0)
+            if (comparer(keys[i], key) > 0)
             {
                 break;
             }
         }
-        return pointers[i - 1].LTEFind(key);
+        return pointers[i - 1].GTEFind(key, comparer);
+    }
+
+    public override Node<K, V> LTEFind(K key, Func<K, K, int> comparer)
+    {
+        var i = 1;
+        for (; i < size; i++)
+        {
+            if (comparer(keys[i], key) > 0)
+            {
+                break;
+            }
+        }
+        return pointers[i - 1].LTEFind(key, comparer);
     }
 
     public override void Print(StringBuilder builder, int height)
@@ -753,9 +850,9 @@ internal class InternalNode<K, V> : Node<K, V> where K : IComparable<K>
 /// <typeparam name="V"></typeparam>
 internal class LeafNode<K, V> : Node<K, V> where K : IComparable<K>
 {
-    protected LeafNode<K, V> prev; // 前节点
-    protected LeafNode<K, V> next; // 后节点
-    private readonly V[] values; // 数据
+    public LeafNode<K, V> prev; // 前节点
+    public LeafNode<K, V> next; // 后节点
+    public readonly V[] values; // 数据
 
     /// <summary>
     /// 构造函数
@@ -780,7 +877,7 @@ internal class LeafNode<K, V> : Node<K, V> where K : IComparable<K>
         return (middle != -1) ? values[middle] : default;
     }
 
-    public override List<V> FindAll(K key, Func<K, K, int> comparer)
+    public override List<V> LeftFind(K key, Func<K, K, int> comparer)
     {
         if (size == 0)
         {
@@ -801,11 +898,6 @@ internal class LeafNode<K, V> : Node<K, V> where K : IComparable<K>
             }
         }
         return resultList;
-    }
-
-    public override Node<K, V> GTEFind(K key)
-    {
-        return key.CompareTo(keys[0]) >= 0 ? this : null;
     }
 
     public override Node<K, V> Insert(K key, V value, Func<K, K, int> comparer)
@@ -917,7 +1009,12 @@ internal class LeafNode<K, V> : Node<K, V> where K : IComparable<K>
 
     }
 
-    public override Node<K, V> LTEFind(K key)
+    public override Node<K, V> GTEFind(K key, Func<K, K, int> comparer)
+    {
+        return comparer(keys[size - 1], key) >= 0 ? this : null;
+    }
+    
+    public override Node<K, V> LTEFind(K key, Func<K, K, int> comparer )
     {
         return this;
     }
