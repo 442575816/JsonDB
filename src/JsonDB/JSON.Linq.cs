@@ -102,12 +102,12 @@ public static partial class JSON
             if (node.NodeType == NodeType.Object)
             {
                 var v = node.Get<object>(key);
-                if (v is not IComparable)
+                if (v is not IComparable comparable)
                 {
                     return false;
                 }
 
-                return (v as IComparable).CompareTo(value) < 0;
+                return comparable.CompareTo(value) < 0;
             }
             return false;
         };
@@ -120,12 +120,12 @@ public static partial class JSON
             if (node.NodeType == NodeType.Object)
             {
                 var v = node.Get<T>(key);
-                if (v is not IComparable)
+                if (v is not IComparable comparable)
                 {
                     return false;
                 }
 
-                return (v as IComparable).CompareTo(value) < 0;
+                return comparable.CompareTo(value) < 0;
             }
             return false;
         };
@@ -152,12 +152,12 @@ public static partial class JSON
             if (node.NodeType == NodeType.Object)
             {
                 var v = node.Get<object>(key);
-                if (v is not IComparable)
+                if (v is not IComparable comparable)
                 {
                     return false;
                 }
 
-                return (v as IComparable).CompareTo(value) <= 0;
+                return comparable.CompareTo(value) <= 0;
             }
             return false;
         };
@@ -170,12 +170,12 @@ public static partial class JSON
             if (node.NodeType == NodeType.Object)
             {
                 var v = node.Get<T>(key);
-                if (v is not IComparable)
+                if (v is not IComparable comparable)
                 {
                     return false;
                 }
 
-                return (v as IComparable).CompareTo(value) <= 0;
+                return comparable.CompareTo(value) <= 0;
             }
             return false;
         };
@@ -202,12 +202,12 @@ public static partial class JSON
             if (node.NodeType == NodeType.Object)
             {
                 var v = node.Get<object>(key);
-                if (v is not IComparable)
+                if (v is not IComparable comparable)
                 {
                     return false;
                 }
 
-                return (v as IComparable).CompareTo(value) > 0;
+                return comparable.CompareTo(value) > 0;
             }
             return false;
         };
@@ -220,12 +220,12 @@ public static partial class JSON
             if (node.NodeType == NodeType.Object)
             {
                 var v = node.Get<T>(key);
-                if (v is not IComparable)
+                if (v is not IComparable comparable)
                 {
                     return false;
                 }
 
-                return (v as IComparable).CompareTo(value) > 0;
+                return comparable.CompareTo(value) > 0;
             }
             return false;
         };
@@ -252,12 +252,12 @@ public static partial class JSON
             if (node.NodeType == NodeType.Object)
             {
                 var v = node.Get<object>(key);
-                if (v is not IComparable)
+                if (v is not IComparable comparable)
                 {
                     return false;
                 }
 
-                return (v as IComparable).CompareTo(value) >= 0;
+                return comparable.CompareTo(value) >= 0;
             }
             return false;
         };
@@ -270,12 +270,12 @@ public static partial class JSON
             if (node.NodeType == NodeType.Object)
             {
                 var v = node.Get<T>(key);
-                if (v is not IComparable)
+                if (v is not IComparable comparable)
                 {
                     return false;
                 }
 
-                return (v as IComparable).CompareTo(value) >= 0;
+                return comparable.CompareTo(value) >= 0;
             }
             return false;
         };

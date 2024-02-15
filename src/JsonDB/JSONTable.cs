@@ -3,7 +3,6 @@
 
 using System.Collections;
 using System.IO.Compression;
-using System.Net.Mime;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -20,7 +19,7 @@ public class JSONTable : IEnumerable<JsonNode>
     /// <summary>
     /// 内部table json
     /// </summary>
-    private JsonNode _tableNode;
+    private JsonNode? _tableNode;
 
     /// <summary>
     /// json库表名
@@ -90,7 +89,7 @@ public class JSONTable : IEnumerable<JsonNode>
     /// <param name="index">下标</param>
     /// <typeparam name="T">指定返回值</typeparam>
     /// <returns></returns>
-    public T Get<T>(int index)
+    public T? Get<T>(int index)
     {
         return _tableNode == null ? default : _tableNode.Get<T>($"${index + 1}");
     }
@@ -100,10 +99,10 @@ public class JSONTable : IEnumerable<JsonNode>
     /// </summary>
     /// <param name="id">主键</param>
     /// <returns></returns>
-    public JsonNode Get(string id)
+    public JsonNode? Get(string id)
     {
         CheckTableNode<JsonNode>(NodeType.ArrayObject);
-        return _mainTable.TryGetValue(id, out var node) ? node : null;
+        return _mainTable.GetValueOrDefault(id);
     }
 
     /// <summary>
@@ -168,7 +167,7 @@ public class JSONTable : IEnumerable<JsonNode>
     public void Insert<T>(T value)
     {
         CheckTableNode<T>(NodeType.ArrayValue);
-        _tableNode.Add(value);
+        _tableNode?.Add(value);
     }
     
     /// <summary>
@@ -181,7 +180,7 @@ public class JSONTable : IEnumerable<JsonNode>
         CheckTableNode<T>(NodeType.ArrayValue);
         foreach (var v in value)
         {
-            _tableNode.Add(v);
+            _tableNode?.Add(v);
         }
     }
 
@@ -203,7 +202,7 @@ public class JSONTable : IEnumerable<JsonNode>
 
         var node = JSON.ParseNode(root);
         var id = Guid.NewGuid().ToString();
-        _tableNode.AddValue(node);
+        _tableNode?.AddValue(node);
         node.Add("_id", id);
 
         InternalInsert(id, node);
@@ -223,7 +222,7 @@ public class JSONTable : IEnumerable<JsonNode>
             throw new Exception("node must be an object");
         }
         var id = Guid.NewGuid().ToString();
-        _tableNode.AddValue(node);
+        _tableNode?.AddValue(node);
         node.Add("_id", id);
 
         InternalInsert(id, node);
@@ -238,7 +237,7 @@ public class JSONTable : IEnumerable<JsonNode>
     public void Update<T>(T old, T newValue)
     {
         CheckTableNode<T>(NodeType.ArrayValue);
-        _tableNode.ReplaceValue(old, newValue);
+        _tableNode?.ReplaceValue(old, newValue);
     }
 
     /// <summary>
@@ -250,7 +249,7 @@ public class JSONTable : IEnumerable<JsonNode>
     public void Update<T>(int index, T newValue)
     {
         CheckTableNode<T>(NodeType.ArrayValue);
-        _tableNode.Set($"${index + 1}", newValue);
+        _tableNode?.Set($"${index + 1}", newValue);
     }
 
     /// <summary>
@@ -272,7 +271,7 @@ public class JSONTable : IEnumerable<JsonNode>
             }
 
             var node = JSON.ParseNode(root);
-            _tableNode.ReplaceValue(old, node);
+            _tableNode?.ReplaceValue(old, node);
             node.Add("_id", id);
 
             InternalUpdate(id, old, node);
@@ -295,7 +294,7 @@ public class JSONTable : IEnumerable<JsonNode>
                 throw new Exception("node must be an object");
             }
 
-            _tableNode.ReplaceValue(old, node);
+            _tableNode?.ReplaceValue(old, node);
             node.Add("_id", id);
 
             InternalUpdate(id, old, node);
@@ -311,7 +310,7 @@ public class JSONTable : IEnumerable<JsonNode>
     public void Update(int index, string json)
     {
         CheckTableNode<JsonNode>(NodeType.ArrayObject);
-        var old = _tableNode.Get<JsonNode>($"${index + 1}");
+        var old = _tableNode?.Get<JsonNode>($"${index + 1}");
         if (null != old)
         {
             var doc = JsonDocument.Parse(json);
@@ -323,10 +322,10 @@ public class JSONTable : IEnumerable<JsonNode>
 
             var id = old.Get<string>("_id");
             var node = JSON.ParseNode(root);
-            _tableNode.Set($"${index + 1}", node);
+            _tableNode?.Set($"${index + 1}", node);
             node.Add("_id", id);
 
-            InternalUpdate(id, old, node);
+            InternalUpdate(id!, old, node);
         }
     }
 
@@ -339,7 +338,7 @@ public class JSONTable : IEnumerable<JsonNode>
     public void Update(int index, JsonNode node)
     {
         CheckTableNode<JsonNode>(NodeType.ArrayObject);
-        var old = _tableNode.Get<JsonNode>($"${index + 1}");
+        var old = _tableNode?.Get<JsonNode>($"${index + 1}");
         if (null != old)
         {
             if (node.NodeType != NodeType.Object)
@@ -348,10 +347,10 @@ public class JSONTable : IEnumerable<JsonNode>
             }
 
             var id = old.Get<string>("_id");
-            _tableNode.Set($"${index + 1}", node);
+            _tableNode?.Set($"${index + 1}", node);
             node.Add("_id", id);
 
-            InternalUpdate(id, old, node);
+            InternalUpdate(id!, old, node);
         }
     }
     
@@ -391,7 +390,7 @@ public class JSONTable : IEnumerable<JsonNode>
         var clone = node.Clone() as JsonNode;
         node.Append(queryKey, value);
 
-        InternalUpdate(id, clone, node);
+        InternalUpdate(id, clone!, node);
     }
     
     /// <summary>
@@ -411,7 +410,7 @@ public class JSONTable : IEnumerable<JsonNode>
         var clone = node.Clone() as JsonNode;
         node.Append(queryKey, key, value);
 
-        InternalUpdate(id, clone, node);
+        InternalUpdate(id, clone!, node);
     }
     
     /// <summary>
@@ -429,7 +428,7 @@ public class JSONTable : IEnumerable<JsonNode>
         var clone = node.Clone() as JsonNode;
         node.AddJson(queryKey, json);
 
-        InternalUpdate(id, clone, node);
+        InternalUpdate(id, clone!, node);
     }
     
      /// <summary>
@@ -448,13 +447,13 @@ public class JSONTable : IEnumerable<JsonNode>
         var clone = node.Clone() as JsonNode;
         node.AppendJson(queryKey, key, json);
 
-        InternalUpdate(id, clone, node);
+        InternalUpdate(id, clone!, node);
     }
 
     public void Delete<T>(T value)
     {
         CheckTableNode<T>(NodeType.ArrayValue);
-        _tableNode.RemoveValue(value);
+        _tableNode?.RemoveValue(value);
     }
 
     public void Delete(string id)
@@ -480,7 +479,7 @@ public class JSONTable : IEnumerable<JsonNode>
 
     public JsonNode Table()
     {
-        return _tableNode;
+        return _tableNode!;
     }
 
     public List<JsonNode> Models()
@@ -490,7 +489,7 @@ public class JSONTable : IEnumerable<JsonNode>
 
     public IEnumerator<JsonNode> GetEnumerator()
     {
-        return _tableNode?.GetEnumerator();
+        return _tableNode?.GetEnumerator() ?? new List<JsonNode>().GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -508,7 +507,7 @@ public class JSONTable : IEnumerable<JsonNode>
         using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
         using Stream wrapperStream = compress ? new GZipStream(stream, CompressionLevel.Fastest) : stream;
         var builder = new StringBuilder();
-        var serializeOptions = JSON.JsonSerializeOptions.Value;
+        var serializeOptions = JSON.JsonSerializeOptions.Value!;
         
         _root.Serialize(wrapperStream, builder, serializeOptions,0);
         wrapperStream.Flush();
@@ -520,37 +519,37 @@ public class JSONTable : IEnumerable<JsonNode>
         using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
         using Stream wrapperStream = compress ? new GZipStream(stream, CompressionMode.Decompress) : stream;
         using var reader = new StreamReader(new BufferedStream(wrapperStream, bufferSize:8192));
-        string line = null;
         var nodeStack = new Stack<JsonNode>();
-        _root = null;
+        JsonNode? root = null;
 
         // load时候关闭排序
         var srcJsonOptions = JSON.JsonOptions.Value;
         JSON.JsonOptions.Value = new JsonOptions { Sort = false };
 
-        var serializeOptions = JSON.JsonSerializeOptions.Value;
-        var split = new[] { JSON.JsonSerializeOptions.Value.COMMA };
-        while ((line = reader.ReadLine()) != null)
+        var serializeOptions = JSON.JsonSerializeOptions.Value!;
+        var split = new[] { JSON.JsonSerializeOptions.Value!.COMMA };
+        while (reader.ReadLine() is { } line)
         {
             var node = ParseNode(ref line, nodeStack, ref split, serializeOptions);
-            _root ??= node;
+            root ??= node;
         }
 
         // 还原设置
-        JSON.JsonOptions.Value = srcJsonOptions;
+        _root = root!;
+        JSON.JsonOptions.Value = srcJsonOptions!;
         _tableNode = _root.GetNode(_tableName);
     }
 
-    private JsonNode ParseNode(ref string line, Stack<JsonNode> nodeStack, ref char[] split, JsonSerializeOptions serializeOptions)
+    private JsonNode? ParseNode(ref string line, Stack<JsonNode> nodeStack, ref char[] split, JsonSerializeOptions serializeOptions)
     {
         var array = line.Split(split);
         var depth = int.Parse(array[0]);
         var nodeType = array[1][0] - '0';
         var key = serializeOptions.NullValue.Equals(array[2], StringComparison.Ordinal) ? null : array[2];
         var valueType = array[3][0];
-        var value = serializeOptions.NullValue.Equals(array[4], StringComparison.Ordinal) ? null : array[4];;
-        JsonNode node = null;
-        JsonNode parent = null;
+        var value = serializeOptions.NullValue.Equals(array[4], StringComparison.Ordinal) ? null : array[4];
+        JsonNode? node = null;
+        JsonNode? parent = null;
         
         if (depth < nodeStack.Count)
         {
@@ -669,13 +668,35 @@ public class JSONTable : IEnumerable<JsonNode>
                 parent = depth > 0 ? nodeStack.Peek() : null;
                 AddChild(node, parent);
                 break;
+            case (int)NodeType.LazyArray:
+                // LazyArray
+            {
+                var elememt = JsonDocument.Parse(value!).RootElement;
+                node = new LazyJsonArrayNode { Key = key, NodeType = NodeType.ArrayObject, Value = elememt};
+                parent = depth > 0 ? nodeStack.Peek() : null;
+                AddChild(node, parent);
+            }
+                break;
+            case (int)NodeType.LazyObject:
+                // LazyValue
+            {
+                var elememt = JsonDocument.Parse(value!).RootElement;
+                node = new LazyJsonValueNode { Key = key, NodeType = NodeType.Value, Value = elememt};
+                parent = depth > 0 ? nodeStack.Peek() : null;
+                AddChild(node, parent);
+            }
+                break;
         }
         return node;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private void AddChild(JsonNode node, JsonNode parent)
+    private void AddChild(JsonNode? node, JsonNode? parent)
     {
+        if (null == node)
+        {
+            return;
+        }
         if (null == parent)
         {
             return;
@@ -691,7 +712,7 @@ public class JSONTable : IEnumerable<JsonNode>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private T GetValue<T>(string value, char valueType)
+    private T? GetValue<T>(string? value, char valueType)
     {
         if (null == value)
         {
