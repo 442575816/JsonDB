@@ -6,7 +6,13 @@ namespace JsonDB;
 
 public class JsonValueNode<T> : JsonNode
 {
-    public T? Value { get; set; }
+    protected T? _value;
+
+    public virtual T? Value
+    {
+        get => _value;
+        set => _value = value;
+    }
 
     protected internal override TBase InternalGetValue<TBase>(int pos, string lastKey)
     {

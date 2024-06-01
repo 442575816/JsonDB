@@ -4,9 +4,29 @@ using System.Text.Json;
 
 namespace JsonDB;
 
-public class JsonArrayNode<T> : JsonValueNode<List<T>>
+public class JsonArrayNode<T> : JsonValueNode<List<T>>, IEnumerable<T>
 {
     public override int Count => Value?.Count ?? 0;
+    
+    public override List<T>? Value
+    {
+        get
+        {
+            // 触发解析懒加载节点
+            if (null != _value && NodeType == NodeType.ArrayObject)
+            {
+                for (var i = 0; i < _value.Count; i++)
+                {
+                    if (_value[i] is JsonNode node)
+                    {
+                        node.ParseLazyNode();
+                    }
+                }
+            }
+            return _value;
+        }
+        set => _value = value;
+    }
 
     /// <summary>
     /// 添加值
@@ -14,7 +34,7 @@ public class JsonArrayNode<T> : JsonValueNode<List<T>>
     /// <param name="value"></param>
     internal override void AddValue<TBase>(TBase value)
     {
-        Value ??= new List<T>();
+        Value ??= [];
         Value.Add(JSON.CastTo<TBase, T>(ref value)!);
         if (value is JsonNode node)
         {
@@ -43,32 +63,31 @@ public class JsonArrayNode<T> : JsonValueNode<List<T>>
         var nv = JSON.CastTo<TBase, T>(ref newValue);
         if (ov != null && nv != null)
         {
-            for (var i = 0; i < Value!.Count; i++)
+            for (var i = 0; i < _value!.Count; i++)
             {
-                if (Value[i]!.Equals(ov))
+                if (_value[i]!.Equals(ov))
                 {
-                    Value[i] = nv;
+                    _value[i] = nv;
                     break;
                 }
             }
         }
     }
 
-    public override IEnumerator<JsonNode> GetEnumerator()
+    public new IEnumerator<T> GetEnumerator()
     {
-        if (NodeType == NodeType.ArrayObject)
+        if (null != _value && NodeType == NodeType.ArrayObject)
         {
-            for (var i = 0; i < Value!.Count; i++)
+            for (var i = 0; i < _value!.Count; i++)
             {
-                if (Value[i] is JsonNode node)
+                if (_value[i] is JsonNode node)
                 {
                     node.ParseLazyNode();
                 }
             }
-            return (Value as List<JsonNode>)?.GetEnumerator() ?? new List<JsonNode>().GetEnumerator();
         }
 
-        return new List<JsonNode>().GetEnumerator();
+        return _value?.GetEnumerator() ?? new List<T>().GetEnumerator();
     }
 
     /// <summary>

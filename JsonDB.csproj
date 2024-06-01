@@ -12,6 +12,10 @@
       <DebugType>embedded</DebugType>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <PathMap>$(MSBuildProjectDirectory)\$(IntermediateOutputPath)=.</PathMap>
+    </PropertyGroup>
+
     <ItemGroup>
       <PackageReference Include="Antlr4.Runtime.Standard" Version="4.11.1" />
     </ItemGroup>

@@ -453,7 +453,7 @@ public static partial class JSON
         //     }
         // }
 
-        jsonNode ??= new JsonArrayNode<JsonNode> { Key = elementKey, NodeType = NodeType.ArrayObject };
+        jsonNode ??= new JsonArrayNode<JsonNode> { Key = elementKey, NodeType = NodeType.ArrayObject, Value = []};
         parent?.AddChild(jsonNode);
         return jsonNode;
     }
@@ -590,14 +590,366 @@ public static partial class JSON
     /// <returns></returns>
     internal static TTo? CastTo<TFrom, TTo>(ref TFrom value)
     {
-        if (typeof(TFrom) == typeof(TTo))
+        var typeTFrom = typeof(TFrom);
+        var typeTTo = typeof(TTo);
+        if (typeTFrom == typeTTo)
         {
             return Unsafe.As<TFrom, TTo>(ref value);
         }
+        
+        if (typeTTo == typeof(object))
+        {
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+            object vv = value;
+            return (TTo)vv;
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+        }
+        
+        if (typeTFrom == typeof(string))
+        {
+            return StringCastTo<TTo>(value as string ?? null, typeTTo);
+        }
 
+        if (typeTFrom == typeof(int))
+        {
+            return IntCastTo<TTo>(value is int i ? i : null, typeTTo);
+        }
+        
+        if (typeTFrom == typeof(long))
+        {
+            return LongCastTo<TTo>(value is long l ? l : null, typeTTo);
+        }
+        
+        if (typeTFrom == typeof(double))
+        {
+            return DoubleCastTo<TTo>(value is double d ? d : null, typeTTo);
+        }
+        
+        if (typeTFrom == typeof(float))
+        {
+            return FloatCastTo<TTo>(value is float f ? f : null, typeTTo);
+        }
+        
+        if (typeTFrom == typeof(byte))
+        {
+            return ByteCastTo<TTo>(value is byte b ? b : null, typeTTo);
+        }
+        
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
         object v = value;
         return (TTo)v;
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+    }
+
+    /// <summary>
+    /// string到各种类型的转换
+    /// </summary>
+    /// <param name="src"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    internal static T? StringCastTo<T>(string? src, Type typeTTo)
+    {
+        if (null == src)
+        {
+            return default;
+        }
+
+        if (typeTTo == typeof(bool))
+        {
+            bool.TryParse(src, out var result);
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(int))
+        {
+            int.TryParse(src, out var result);
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(long))
+        {
+            long.TryParse(src, out var result);
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(double))
+        {
+            double.TryParse(src, out var result);
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(float))
+        {
+            float.TryParse(src, out var result);
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(byte))
+        {
+            byte.TryParse(src, out var result);
+            return result is T t ? t : default;
+        }
+
+        return default;
+    }
+    
+    /// <summary>
+    /// int到各种类型的转换
+    /// </summary>
+    /// <param name="src"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    internal static T? IntCastTo<T>(int? src, Type typeTTo)
+    {
+        if (null == src)
+        {
+            return default;
+        }
+
+        if (typeTTo == typeof(bool))
+        {
+            var result = src == 1;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(long))
+        {
+            var result = (long)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(double))
+        {
+            var result = (double)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(float))
+        {
+            var result = (float)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(byte))
+        {
+            var result = (byte)src;
+            return result is T t ? t : default;
+        }
+        
+        if (typeTTo == typeof(string))
+        {
+            var result = $"{src}";
+            return result is T t ? t : default;
+        }
+
+        return default;
+    }
+    
+    /// <summary>
+    /// long到各种类型的转换
+    /// </summary>
+    /// <param name="src"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    internal static T? LongCastTo<T>(long? src, Type typeTTo)
+    {
+        if (null == src)
+        {
+            return default;
+        }
+
+        if (typeTTo == typeof(bool))
+        {
+            var result = src == 1;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(int))
+        {
+            var result = (int)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(double))
+        {
+            var result = (double)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(float))
+        {
+            var result = (float)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(byte))
+        {
+            var result = (byte)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(string))
+        {
+            var result = $"{src}";
+            return result is T t ? t : default;
+        }
+        
+        return default;
+    }
+    
+    /// <summary>
+    /// double到各种类型的转换
+    /// </summary>
+    /// <param name="src"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    internal static T? DoubleCastTo<T>(double? src, Type typeTTo)
+    {
+        if (null == src)
+        {
+            return default;
+        }
+
+        if (typeTTo == typeof(bool))
+        {
+            var result = src >= 1;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(int))
+        {
+            var result = (int)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(long))
+        {
+            var result = (long)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(float))
+        {
+            var result = (float)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(byte))
+        {
+            var result = (byte)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(string))
+        {
+            var result = $"{src}";
+            return result is T t ? t : default;
+        }
+        
+        return default;
+    }
+    
+    /// <summary>
+    /// float到各种类型的转换
+    /// </summary>
+    /// <param name="src"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    internal static T? FloatCastTo<T>(float? src, Type typeTTo)
+    {
+        if (null == src)
+        {
+            return default;
+        }
+
+        if (typeTTo == typeof(bool))
+        {
+            var result = src >= 1;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(int))
+        {
+            var result = (int)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(long))
+        {
+            var result = (long)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(double))
+        {
+            var result = (double)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(byte))
+        {
+            var result = (byte)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(string))
+        {
+            var result = $"{src}";
+            return result is T t ? t : default;
+        }
+        
+        return default;
+    }
+    
+    /// <summary>
+    /// byte到各种类型的转换
+    /// </summary>
+    /// <param name="src"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    internal static T? ByteCastTo<T>(byte? src, Type typeTTo)
+    {
+        if (null == src)
+        {
+            return default;
+        }
+
+        if (typeTTo == typeof(bool))
+        {
+            var result = src == 1;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(int))
+        {
+            var result = (int)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(long))
+        {
+            var result = (long)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(double))
+        {
+            var result = (double)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(float))
+        {
+            var result = (float)src;
+            return result is T t ? t : default;
+        }
+
+        if (typeTTo == typeof(string))
+        {
+            var result = $"{src}";
+            return result is T t ? t : default;
+        }
+        
+        return default;
     }
 }
