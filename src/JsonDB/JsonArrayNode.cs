@@ -74,7 +74,23 @@ public class JsonArrayNode<T> : JsonValueNode<List<T>>, IEnumerable<T>
         }
     }
 
-    public new IEnumerator<T> GetEnumerator()
+    public override IEnumerator<JsonNode> GetEnumerator()
+    {
+        if (null != _value && NodeType == NodeType.ArrayObject)
+        {
+            for (var i = 0; i < _value!.Count; i++)
+            {
+                if (_value[i] is JsonNode node)
+                {
+                    node.ParseLazyNode();
+                }
+            }
+        }
+
+        return (_value as List<JsonNode>)?.GetEnumerator() ?? new List<JsonNode>().GetEnumerator();
+    }
+
+    IEnumerator<T> IEnumerable<T>.GetEnumerator()
     {
         if (null != _value && NodeType == NodeType.ArrayObject)
         {

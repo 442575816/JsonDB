@@ -1,7 +1,18 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using JsonDB;
-using JsonDB.Example;
+//
+// var json = """
+//            {
+//            "test":
+//            [ 1,2,4
+//            ]}
+//            """;
+// var obj = JSON.Parse(json, true);
+// var arrayNode = obj.Get<JsonArrayNode<int>>("test")!;
+// foreach (var d in arrayNode.Value) {
+//     Console.WriteLine(d);
+// }
 
 // var sample = new Sample1();
 // sample.Run();
