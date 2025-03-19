@@ -68,7 +68,7 @@ public class JSONTable : IEnumerable<JsonNode>
     /// <param name="indexName">索引名称</param>
     /// <param name="unique">是否是唯一索引</param>
     /// <param name="keys">索引对应的列名，大小写敏感</param>
-    public void AddIndex(string indexName, bool unique, Func<string, string, int> comparer, Func<string, string, int> leftComparer, params string[] keys)
+    public void AddIndex(string indexName, bool unique, Func<string, string, int> comparer, Func<string, string, int>? leftComparer, params string[] keys)
     {
         CheckTableNode<JsonNode>(NodeType.ArrayObject);
         JsonIndexManager<JsonNode> manager;
@@ -112,7 +112,7 @@ public class JSONTable : IEnumerable<JsonNode>
     /// <param name="args">查找参数</param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public object Find(string keyName, params object[] args)
+    public object? Find(string keyName, params object[] args)
     {
         if (!_indexTable.TryGetValue(keyName, out var indexManager))
         {

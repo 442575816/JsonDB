@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace JsonDB.Example;
 
 public class Sample5
@@ -19,7 +17,7 @@ public class Sample5
             if (male == "male")
             {
                 var roomNum = random.Next(1000) + 100;
-                var id = data.Get<string>("_id");
+                var id = data.Get<string>("_id")!;
                 table.AddJson(id, "address", $@"{{""city"":""shanghai"", ""street"":""黄浦区北京路99号"", ""roomNo"":""{roomNum}""}}");
                 // data.AddJson("address", $@"{{""city"":""shanghai"", ""street"":""黄浦区北京路99号"", ""roomNo"":""{roomNum}""}}");
             }
@@ -38,7 +36,7 @@ public class Sample5
         var set = new HashSet<string>();
         foreach (var node in nodeList)
         {
-            set.Add(node.Get<string>("_id"));
+            set.Add(node.Get<string>("_id")!);
             // Console.WriteLine($"{node.Get<string>("name")}, {node.Get<int>("age")}");
         }
         Console.WriteLine("-----------------");
@@ -48,7 +46,7 @@ public class Sample5
             {
                 foreach (var node in pair.Value)
                 {
-                    var id = node.Get<string>("_id");
+                    var id = node.Get<string>("_id")!;
                     if (set.Contains(id))
                     {
                         set.Remove(id);

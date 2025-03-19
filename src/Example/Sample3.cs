@@ -16,7 +16,7 @@ public class Sample3
             if (male == "male")
             {
                 var roomNum = random.Next(1000) + 100;
-                var id = data.Get<string>("_id");
+                var id = data.Get<string>("_id")!;
                 table.AddJson(id, "address", $@"{{""city"":""shanghai"", ""street"":""黄浦区北京路99号"", ""roomNo"":""{roomNum}""}}");
                 // data.AddJson("address", $@"{{""city"":""shanghai"", ""street"":""黄浦区北京路99号"", ""roomNo"":""{roomNum}""}}");
             }

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace JsonDB;
 
 /// <summary>
@@ -15,23 +12,22 @@ public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
     private readonly Func<string, string, int> _leftComparer;
     private readonly Func<string, string, int> _comparer;
 
-    public BTreeJsonIndexManager(JSONTable table, string name, Func<string, string, int> comparer = null,
-        Func<string, string, int> leftComparer = null, params string[] keyProps)
+    public BTreeJsonIndexManager(JSONTable table, string name, Func<string, string, int>? comparer = null,
+        Func<string, string, int>? leftComparer = null, params string[] keyProps)
     {
-        this._table = table;
-        this.Name = name;
-        this._props = keyProps;
-        this._indexTree = new BPlusTree<string, string>();
-        this._comparer = comparer ?? string.CompareOrdinal;
-        this._leftComparer = comparer == null && leftComparer == null ? (key, seachKey) =>
-            key.StartsWith(seachKey) ? 0 : string.Compare(key, seachKey, StringComparison.Ordinal) : null;
+        _table = table;
+        Name = name;
+        _props = keyProps;
+        _indexTree = new BPlusTree<string, string>();
+        _comparer = comparer ?? string.CompareOrdinal;
+        _leftComparer = leftComparer ?? ((key, searchKey) => key.StartsWith(searchKey, StringComparison.Ordinal) ? 0 : string.Compare(key, searchKey, StringComparison.Ordinal));
     }
 
     public string Name { get; }
 
     public void Insert(V value)
     {
-        var idKey = value.Get<string>("_id");
+        var idKey = value.Get<string>("_id")!;
         var indexKey = GetKey(value);
         _indexTree.Insert(indexKey, idKey, _comparer);
     }
@@ -42,7 +38,7 @@ public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
         _indexTree.Remove(indexKey, _comparer);
     }
 
-    public void Update(V oldValue, V newValue)
+    public void Update(V? oldValue, V newValue)
     {
         if (oldValue == null)
         {
@@ -53,18 +49,18 @@ public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
         var newIndexKey = GetKey(newValue);
         if (oldIndexKey != newIndexKey)
         {
-            var idKey = newValue.Get<string>("_id");
+            var idKey = newValue.Get<string>("_id")!;
             _indexTree.Remove(oldIndexKey, _comparer);
             _indexTree.Insert(newIndexKey, idKey, _comparer);
         }
     }
 
-    public object Find(params object[] args)
+    public object? Find(params object[] args)
     {
         var indexKey = GetKey(args);
         var idKey = _indexTree.Find(indexKey, _comparer);
-
-        return _table.Get(idKey);
+        
+        return idKey == null ? null : _table.Get(idKey);
     }
 
     public List<V> LeftFind(params object[] args)
@@ -78,7 +74,7 @@ public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
         var resultList = new List<V>(keyList.Count);
         foreach (var key in keyList)
         {
-            resultList.Add((V)_table.Get(key));
+            resultList.Add((V)_table.Get(key)!);
         }
 
         return resultList;
@@ -91,7 +87,7 @@ public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
     
     public List<V> RangeFind(object startValue, object endValue, Func<string, string, int> comparer)
     {
-        string startKey = null;
+        string? startKey = null;
         if (startValue is object[] args1)
         {
             startKey = GetKey(args1);
@@ -100,7 +96,7 @@ public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
         {
             startKey = GetKey(startValue);
         }
-        string endKey = null;
+        string? endKey = null;
         if (endValue is object[] args2)
         {
             endKey = GetKey(args2);
@@ -114,7 +110,7 @@ public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
         var resultList = new List<V>(keyList.Count);
         foreach (var key in keyList)
         {
-            resultList.Add((V)_table.Get(key));
+            resultList.Add((V)_table.Get(key)!);
         }
 
         return resultList;
@@ -122,7 +118,7 @@ public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
 
     public void Clear()
     {
-        this._indexTree = new BPlusTree<string, string>();
+        _indexTree = new BPlusTree<string, string>();
     }
 
     private string GetKey(V value)
@@ -130,7 +126,7 @@ public class BTreeJsonIndexManager<V> : JsonIndexManager<V> where V : JsonNode
         var array = new object[_props.Length];
         for (var i = 0; i < _props.Length; i++)
         {
-            array[i] = value.Get<object>(_props[i]);
+            array[i] = value.Get<object>(_props[i])!;
         }
 
         return JsonIndexManager<V>.ToString(array);

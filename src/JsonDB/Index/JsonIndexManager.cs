@@ -31,14 +31,14 @@ public interface JsonIndexManager<V>
     /// </summary>
     /// <param name="oldValue"></param>
     /// <param name="newValue"></param>
-    void Update(V oldValue, V newValue);
+    void Update(V? oldValue, V newValue);
 
     /// <summary>
     /// 索引中查找对象
     /// </summary>
     /// <param name="args"></param>
     /// <returns></returns>
-    object Find(params object[] args);
+    object? Find(params object[] args);
 
     /// <summary>
     /// 索引中，左值查找

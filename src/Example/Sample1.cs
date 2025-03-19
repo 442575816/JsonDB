@@ -14,7 +14,7 @@ public class Sample1
         Console.WriteLine($"{data}");
         
         // JsonPath
-        data = table.Table().Get<JsonNode>("$1");
+        data = table.Table().Get<JsonNode>("$1")!;
         Console.WriteLine($"{data}");
         
         var nameData = table.Table().Get<string>("$1.name");
